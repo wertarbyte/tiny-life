@@ -1,4 +1,3 @@
-#define F_CPU 1200000UL
 #include <avr/io.h>
 #include <util/delay.h>
 
@@ -134,15 +133,14 @@ int main(void) {
 		}
 		output_high(PORTD,COL_PIN[active_col]);
 		n++;
-		if (n > 150) {
+		if (n > 750) {
 			uint8_t changes = update_field();
 			n = 0;
 			if (changes == 0) {
 				seed();
 			}
-		} else {
-			_delay_ms(2);
 		}
+		_delay_ms(10);
 		output_low(PORTD,COL_PIN[active_col]);
 		active_col = (active_col+1)%COLS;
 	}
