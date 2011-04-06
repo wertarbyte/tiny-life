@@ -12,6 +12,8 @@
 #define set_alive(f,i,j) ( f[i] |= (1<<(j)) )
 #define set_dead(f,i,j) ( f[i] &= ~(1<<(j)) )
 
+#define mod(x,y) (x>=y ? x-y : (x<0 ? x+y : x))
+
 #define ROWS 7
 #define COLS 5
 
@@ -67,14 +69,14 @@ uint8_t neighbours(int i, int j) {
         for (int8_t di=-1; di<=+1; di++) {
                 for (int8_t dj=-1; dj<=+1; dj++) {
                         if (di == 0 && dj == 0) continue;
-#if 1
+#if 0
 			if (i+di >= COLS || i+di < 0 || j+dj >= ROWS || j+dj < 0) {
 				continue;
 			} else {
 				if (alive(i+di, j+dj)) n++;
 			}
 #else
-			if (alive((COLS+i+di)%COLS, (ROWS+j+dj)%ROWS)) {
+			if (alive( mod(i+di, COLS), mod(j+dj, ROWS) ) ) {
 				n++;
 			}
 #endif
@@ -86,30 +88,31 @@ uint8_t neighbours(int i, int j) {
 int update_field(void) {
 	uint8_t next = 1-current;
         int changes = 0;
-        for (int i=0; i<COLS; i++) {
-                for (int j=0; j<ROWS; j++) {
-                        // calculate number of neihgbours
-                        uint8_t n = neighbours(i,j);
-                        // a living cell dies if it has less than 2 neighbours
-                        if (n<2 && alive(i,j)) {
-                                set_dead(field[next], i, j);
-                                changes++;
-                        // a living cell dies if it has more than 3 neighbours
-                        } else if (n>3 && alive(i,j)) {
-                                set_dead(field[next], i, j);
-                                changes++;
-                        // a dead cell comes alive if it has exactly 3 neighbours
-                        } else if (n == 3 && ! alive(i,j)) {
-                                set_alive(field[next], i, j);
-                                changes++;
-                        } else {
+
+	for (int i=0; i<COLS; i++) {
+		for (int j=0; j<ROWS; j++) {
+			// calculate number of neihgbours
+			uint8_t n = neighbours(i,j);
+			// a living cell dies if it has less than 2 neighbours
+			if (n<2 && alive(i,j)) {
+				set_dead(field[next], i, j);
+				changes++;
+			// a living cell dies if it has more than 3 neighbours
+			} else if (n>3 && alive(i,j)) {
+				set_dead(field[next], i, j);
+				changes++;
+			// a dead cell comes alive if it has exactly 3 neighbours
+			} else if (n == 3 && ! alive(i,j)) {
+				set_alive(field[next], i, j);
+				changes++;
+			} else {
 				if (alive(i,j)) {
 					set_alive(field[next], i, j);
 				} else {
 					set_dead(field[next], i, j);
 				}
-                        }
-                }
+			}
+		}
         }
 	current = next;
         return changes;
@@ -120,6 +123,7 @@ int main(void) {
 	seed();
 	int n = 0;
 	uint8_t active_col = 0;
+
 	while(1) {
 		for (int x=0; x<ROWS; x++) {
 			if (alive(active_col,x)) {
@@ -131,9 +135,10 @@ int main(void) {
 		output_high(PORTD,COL_PIN[active_col]);
 		_delay_ms(2);
 		n++;
-		if (n > 150 && active_col == 0) {
+		if (n > 150) {
+			uint8_t changes = update_field();
 			n = 0;
-			if (update_field() == 0) {
+			if (changes == 0) {
 				seed();
 			}
 		}
