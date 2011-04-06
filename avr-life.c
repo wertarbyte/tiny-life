@@ -133,7 +133,6 @@ int main(void) {
 			}
 		}
 		output_high(PORTD,COL_PIN[active_col]);
-		_delay_ms(2);
 		n++;
 		if (n > 150) {
 			uint8_t changes = update_field();
@@ -141,6 +140,8 @@ int main(void) {
 			if (changes == 0) {
 				seed();
 			}
+		} else {
+			_delay_ms(2);
 		}
 		output_low(PORTD,COL_PIN[active_col]);
 		active_col = (active_col+1)%COLS;
