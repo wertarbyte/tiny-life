@@ -17,7 +17,6 @@
 #define ROWS 7
 #define COLS 5
 
-uint8_t current = 0;
 
 enum border {
 	B_WRAPPED,
@@ -50,7 +49,8 @@ struct { uint8_t data[COLS]; enum border b; } preseed[N_PRESEEDS] = {
 	},
 };
 
-uint8_t field[2][COLS];
+uint8_t volatile current = 0;
+uint8_t volatile field[2][COLS];
 enum border b_style;
 
 const uint8_t COL_PIN[COLS] = {
