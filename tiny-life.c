@@ -19,26 +19,39 @@
 
 uint8_t current = 0;
 
+enum border {
+	B_WRAPPED,
+	B_DEAD,
+	B_ALIVE
+};
+
 #define N_PRESEEDS 2
 uint8_t i_preseed = 0;
-uint8_t preseed[N_PRESEEDS][COLS] = {
+struct { uint8_t data[COLS]; enum border b; } preseed[N_PRESEEDS] = {
 	{
-	0b00100000,
-	0b00010000,
-	0b01110000,
-	0b00000000,
-	0b00000000,
+		{
+		0b00100000,
+		0b00010000,
+		0b01110000,
+		0b00000000,
+		0b00000000,
+		},
+		B_WRAPPED
 	},
 	{
-	0b00000000,
-	0b00001000,
-	0b00111000,
-	0b00001000,
-	0b00000000,
+		{
+		0b00000000,
+		0b00001000,
+		0b00111000,
+		0b00001000,
+		0b00000000,
+		},
+		B_DEAD
 	},
 };
 
 uint8_t field[2][COLS];
+enum border b_style;
 
 const uint8_t COL_PIN[COLS] = {
 	PD0,
@@ -59,8 +72,9 @@ const uint8_t ROW_PIN[ROWS] = {
 };
 
 void inline seed(void) {
+	b_style = preseed[i_preseed].b;
 	for (uint8_t i=0; i<COLS; i++) {
-		field[current][i] = preseed[i_preseed][i];
+		field[current][i] = preseed[i_preseed].data[i];
 	}
 }
 
@@ -90,17 +104,19 @@ uint8_t inline neighbours(int i, int j) {
         for (int8_t di=-1; di<=+1; di++) {
                 for (int8_t dj=-1; dj<=+1; dj++) {
                         if (di == 0 && dj == 0) continue;
-#if 0
-			if (i+di >= COLS || i+di < 0 || j+dj >= ROWS || j+dj < 0) {
-				continue;
+
+			if (b_style == B_WRAPPED) {
+				if (alive( mod(i+di, COLS), mod(j+dj, ROWS) ) ) {
+					n++;
+				}
 			} else {
-				if (alive(i+di, j+dj)) n++;
+				if (i+di >= COLS || i+di < 0 || j+dj >= ROWS || j+dj < 0) {
+					// cell is not on the field
+					if (b_style == B_ALIVE) n++;
+				} else {
+					if (alive(i+di, j+dj)) n++;
+				}
 			}
-#else
-			if (alive( mod(i+di, COLS), mod(j+dj, ROWS) ) ) {
-				n++;
-			}
-#endif
                 }
         }
         return n;
@@ -170,7 +186,7 @@ int main(void) {
 		if (changes == 0) {
 			seed();
 		}
-		_delay_ms(500);
+		_delay_ms(250);
 	}
 	return 0;
 }
