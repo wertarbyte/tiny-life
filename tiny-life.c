@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 
 #define output_low(port,pin) port &= ~(1<<pin)
 #define output_high(port,pin) port |= (1<<pin)
@@ -46,6 +47,12 @@ const uint8_t ROW_PIN[ROWS] = {
 	PB6
 };
 
+void seed(void) {
+	for (int8_t i=0; i<COLS; i++) {
+		field[current][i] = preseed[i];
+	}
+}
+
 void init(void) {
 	for (int i=0; i<COLS; i++) {
 		set_output(DDRD, COL_PIN[i]);
@@ -55,12 +62,14 @@ void init(void) {
 		set_output(DDRB, ROW_PIN[i]);
 		output_low(PORTB, ROW_PIN[i]);
 	}
-}
-
-void seed(void) {
-	for (int8_t i=0; i<COLS; i++) {
-		field[current][i] = preseed[i];
-	}
+	seed();
+	OCR1A = 2;
+	TCCR1A = 0x00;
+	// WGM1=4, prescale at 1024
+	TCCR1B = (0 << WGM13)|(1 << WGM12)|(1 << CS12)|(0 << CS11)|(1 << CS10);
+	//Set bit 6 in TIMSK to enable Timer 1 compare interrupt
+	TIMSK |= (1 << OCIE1A);
+	sei();
 }
 
 uint8_t neighbours(int i, int j) {
@@ -117,32 +126,33 @@ int update_field(void) {
         return changes;
 }
 
+volatile uint8_t active_col = 0;
+void draw_screen(void) {
+	output_low(PORTD,COL_PIN[ mod(active_col-1, COLS) ]);
+	for (int x=0; x<ROWS; x++) {
+		if (alive(active_col,x)) {
+			output_low(PORTB, ROW_PIN[x]);
+		} else {
+			output_high(PORTB, ROW_PIN[x]);
+		}
+	}
+	output_high(PORTD,COL_PIN[active_col]);
+	active_col = (active_col+1)%COLS;
+}
+
+SIGNAL(SIG_TIMER1_COMPA) {
+	draw_screen();
+}
+
 int main(void) {
 	init();
-	seed();
-	int n = 0;
-	uint8_t active_col = 0;
 
 	while(1) {
-		for (int x=0; x<ROWS; x++) {
-			if (alive(active_col,x)) {
-				output_low(PORTB, ROW_PIN[x]);
-			} else {
-				output_high(PORTB, ROW_PIN[x]);
-			}
+		_delay_ms(500);
+		uint8_t changes = update_field();
+		if (changes == 0) {
+			seed();
 		}
-		output_high(PORTD,COL_PIN[active_col]);
-		n++;
-		if (n > 750) {
-			uint8_t changes = update_field();
-			n = 0;
-			if (changes == 0) {
-				seed();
-			}
-		}
-		_delay_ms(10);
-		output_low(PORTD,COL_PIN[active_col]);
-		active_col = (active_col+1)%COLS;
 	}
 	return 0;
 }
