@@ -19,12 +19,23 @@
 
 uint8_t current = 0;
 
-uint8_t preseed[COLS] = {
+#define N_PRESEEDS 2
+uint8_t i_preseed = 0;
+uint8_t preseed[N_PRESEEDS][COLS] = {
+	{
 	0b00100000,
 	0b00010000,
 	0b01110000,
 	0b00000000,
 	0b00000000,
+	},
+	{
+	0b00000000,
+	0b00001000,
+	0b00111000,
+	0b00001000,
+	0b00000000,
+	},
 };
 
 uint8_t field[2][COLS];
@@ -47,9 +58,9 @@ const uint8_t ROW_PIN[ROWS] = {
 	PB6
 };
 
-void seed(void) {
-	for (int8_t i=0; i<COLS; i++) {
-		field[current][i] = preseed[i];
+void inline seed(void) {
+	for (uint8_t i=0; i<COLS; i++) {
+		field[current][i] = preseed[i_preseed][i];
 	}
 }
 
@@ -62,6 +73,8 @@ void init(void) {
 		set_output(DDRB, ROW_PIN[i]);
 		output_low(PORTB, ROW_PIN[i]);
 	}
+	set_input(DDRA, PA0);
+	set_input(DDRA, PA1);
 	seed();
 	OCR1A = 2;
 	TCCR1A = 0x00;
@@ -148,11 +161,16 @@ int main(void) {
 	init();
 
 	while(1) {
-		_delay_ms(500);
-		uint8_t changes = update_field();
+		uint8_t changes = 0;
+		if (PINA & (1<<PA0)) {
+			i_preseed = mod(i_preseed+1, N_PRESEEDS);
+		} else {
+			changes = update_field();
+		}
 		if (changes == 0) {
 			seed();
 		}
+		_delay_ms(500);
 	}
 	return 0;
 }
