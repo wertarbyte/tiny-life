@@ -85,7 +85,7 @@ void init(void) {
 	sei();
 }
 
-uint8_t neighbours(int i, int j) {
+uint8_t inline neighbours(int i, int j) {
         uint8_t n = 0;
         for (int8_t di=-1; di<=+1; di++) {
                 for (int8_t dj=-1; dj<=+1; dj++) {
@@ -106,7 +106,7 @@ uint8_t neighbours(int i, int j) {
         return n;
 }
 
-int update_field(void) {
+int inline update_field(void) {
 	uint8_t next = 1-current;
         int changes = 0;
 
@@ -140,7 +140,7 @@ int update_field(void) {
 }
 
 volatile uint8_t active_col = 0;
-void draw_screen(void) {
+void inline draw_screen(void) {
 	output_low(PORTD,COL_PIN[ mod(active_col-1, COLS) ]);
 	for (int x=0; x<ROWS; x++) {
 		if (alive(active_col,x)) {
