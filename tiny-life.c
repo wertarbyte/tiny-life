@@ -20,11 +20,12 @@
 
 enum border {
 	B_WRAPPED,
+	B_XWRAPPED,
 	B_DEAD,
 	B_ALIVE
 };
 
-#define N_PRESEEDS 2
+#define N_PRESEEDS 3
 uint8_t i_preseed = 0;
 struct { uint8_t data[COLS]; enum border b; } preseed[N_PRESEEDS] = {
 	{
@@ -36,6 +37,16 @@ struct { uint8_t data[COLS]; enum border b; } preseed[N_PRESEEDS] = {
 		0b00000000,
 		},
 		B_WRAPPED
+	},
+	{
+		{
+		0b00010010,
+		0b00100000,
+		0b00100010,
+		0b00111100,
+		0b00000000,
+		},
+		B_XWRAPPED
 	},
 	{
 		{
@@ -107,6 +118,10 @@ uint8_t inline neighbours(int i, int j) {
 
 			if (b_style == B_WRAPPED) {
 				if (alive( mod(i+di, COLS), mod(j+dj, ROWS) ) ) {
+					n++;
+				}
+			} else if (b_style == B_XWRAPPED) {
+				if (i+di >= 0 && i+di < COLS && alive( i+di, mod(j+dj, ROWS)) ) {
 					n++;
 				}
 			} else {
