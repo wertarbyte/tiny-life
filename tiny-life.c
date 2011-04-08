@@ -50,7 +50,7 @@ struct { uint8_t data[COLS]; enum border b; } preseed[N_PRESEEDS] = {
 };
 
 uint8_t volatile current = 0;
-uint8_t volatile field[2][COLS];
+uint8_t field[2][COLS];
 enum border b_style;
 
 const uint8_t COL_PIN[COLS] = {
@@ -155,7 +155,7 @@ int inline update_field(void) {
         return changes;
 }
 
-volatile uint8_t active_col = 0;
+uint8_t active_col = 0;
 void inline draw_screen(void) {
 	output_low(PORTD,COL_PIN[ mod(active_col-1, COLS) ]);
 	for (int x=0; x<ROWS; x++) {
